@@ -23,15 +23,11 @@ def broadcast(message):
 def handle_client(conn, addr):
     connected = True
     while connected:
-        
         msg_length = conn.recv(HEADER).decode(FORMAT)
         if msg_length:
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode(FORMAT)
-        
-        broadcast(f'{name} has connected'.encode(FORMAT))
-        print(f"Name of {addr} is {name}")
-                
+                       
         broadcast(msg)
 
         print(f"[{addr}] {msg}")
@@ -53,18 +49,18 @@ def start():
     while True:
         conn, addr = server.accept()
         print(f"[NEW CONNECTION] {addr} connected.")
-
+        
         name_lenght = conn.recv(HEADER).decode(FORMAT)
         if name_lenght:
             name_lenght = int(name_lenght)
             name = conn.recv(name_lenght).decode(FORMAT)
 
-        CLIENTS.append(conn) 
-        NAMES.append(name)
-
         broadcast(f'{name} has connected')
         print(f"Name of {addr} is {name}")
 
+        CLIENTS.append(conn) 
+        NAMES.append(name)
+        
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
 

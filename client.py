@@ -1,6 +1,7 @@
 #client.py
 
 import socket
+import threading
 
 HEADER = 64
 PORT = 5050
@@ -46,4 +47,10 @@ def send():
         if MSG == DISCONNECT_MESSAGE:
             client.close()
             break
+
+server_receive_thread = threading.Thread(target=server_receive)
+server_receive_thread.start()
+
+send_thread = threading.Thread(target=send)
+send_thread.start()
         
