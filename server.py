@@ -1,50 +1,64 @@
 #server.py
 
-import socket 
 import threading
+import socket
 
-HEADER = 64
+
+SERVER = input('Server IP: ')
 PORT = 5050
-SERVER = input('Server IP:')
 ADDR = (SERVER, PORT)
-FORMAT = 'utf-8'
 DISCONNECT_MESSAGE = "!dc"
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
+server.listen()
+print(f"[LISTENING] Server is listening on {SERVER}:{PORT}...")
 
-def handle_client(conn, addr):
-    print(f"[NEW CONNECTION] {addr} connected.")
+CLIENTS = []
+NAMES = []
 
-    connected = True
-    while connected:
-        name_lenght = conn.recv(HEADER).decode(FORMAT)
-        if name_lenght:
-                name_lenght = int(name_lenght)
-                name = conn.recv(name_lenght).decode(FORMAT)
 
-        msg_length = conn.recv(HEADER).decode(FORMAT)
-        if msg_length:
-            msg_length = int(msg_length)
-            msg = conn.recv(msg_length).decode(FORMAT)
-                
-        print(f"[{addr}{name}] {msg}")
-        if msg == DISCONNECT_MESSAGE:
-            print (f"[{name}] DISCONNECTED")
-            connected = False
+def broadcast(message):
+    for CLIENT in CLIENTS:
+        send_msg = message.encode('utf-8')
+        CLIENT.send(send_msg)
 
-    conn.close()
-        
+# Function to handle CLIENTS'connections
 
-def start():
-    server.listen()
-    print(f"[LISTENING] Server is listening on {SERVER}:{PORT}")
+
+def handle_client(CLIENT):
     while True:
-        conn, addr = server.accept()
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
+        try:
+            message = CLIENT.recv(1024).decode('utf-8')
+            broadcast(message)
+            print (message)
+        except:
+            index = CLIENTS.index(CLIENT)
+            CLIENTS.remove(CLIENT)
+            NAME = NAMES[index]   
+            broadcast(f'{NAME} has left the chat room!')  
+            print (f'{NAME} has disconnected')      
+            NAMES.remove(NAME)
+            CLIENT.close()
+            break
+
+# Main function to receive the CLIENTS connection
+
+def receive():
+    while True:
+        
+        CLIENT, address = server.accept()
+        print(f'Connection is established with {str(address)}')
+        CLIENT.send('NAME?'.encode('utf-8'))
+        NAME = CLIENT.recv(1024).decode('utf-8')
+        NAMES.append(NAME)
+        CLIENTS.append(CLIENT)
+        print(f'The NAME of {str(address)} is {NAME}')
+        broadcast(f'\n{NAME} has connected to the chat room. Press enter to chat with them')
+        CLIENT.send('You are now connected!. Press enter to chat'.encode('utf-8'))
+        thread = threading.Thread(target=handle_client, args=(CLIENT,))
         thread.start()
         print(f"[ACTIVE CONNECTIONS] {threading.active_count() - 1}")
 
-
-print("[STARTING] server is starting...")
-start()
+if __name__ == "__main__":
+    receive()
