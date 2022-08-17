@@ -5,6 +5,6 @@ Start Server.py and spesify local IPv4 address.\
 Connect to it in client.py. \
 Have fun Chatting :)
 
-Requirments:
+Requirments: \
 Python\
 Socket module for python
