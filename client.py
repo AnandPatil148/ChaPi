@@ -1,15 +1,22 @@
 import threading
 import socket
+import time
 
-SERVER = input('Target IP: ')
-PORT = 5050
+IP = input('TARGET_IP:PORT -> ')
+IP_LIST  = IP.split(':')
+SERVER = IP_LIST[0]
+PORT = int(IP_LIST[1])
 ADDR = (SERVER, PORT)
 DISCONNECT_MESSAGE = "!dc"
 NAME = input('Choose your name >>> ')
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect(ADDR)
-
+try:
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect(ADDR)
+except:
+    print('Please retry with correct IP:PORT.')
+else:
+    pass
 
 def client_receive():
     while True:
@@ -20,20 +27,20 @@ def client_receive():
             else:
                 print(message)
         except:
-            print('Error!')
             client.close()
             break
+    return
 
 
 def client_send():
     while True:
-        message = (input (f'msg>>> '))
+        message = (input (''))
         send_msg = (f'{NAME}: {message}')
         client.send(send_msg.encode('utf-8'))
-        if message == DISCONNECT_MESSAGE:
+        if message == '!dc':
             client.close()
             break
-
+    return
 
 receive_thread = threading.Thread(target=client_receive)
 receive_thread.start()
