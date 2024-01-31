@@ -3,19 +3,33 @@ import socket
 import time
 
 DISCONNECT_MESSAGE = "!dc"
-Authenticated = [False]
+encodeFormat = 'utf-8'
+Authenticated = [False,True]
 
 INPUT = input('TARGET_IP:PORT -> ')
 SERVER = INPUT.split(':')[0]
 PORT = int(INPUT.split(':')[1])
 ADDR = (SERVER, PORT)
-EMAIL = input("Enter Email: ")
-PASSWD = input("Enter Password: ")
+
+regORlog = input("Register Or Login (r/l): ")
+
+if  regORlog == 'r':
+    NAME = input("Enter Username :")
+    EMAIL = input("Enter Email: ")
+    PASSWD = input("Enter Password: ")
+elif regORlog == 'l':
+    EMAIL = input("Enter Email: ")
+    PASSWD = input("Enter Password: ")
+else:
+    print("Invalid Option.")
+    exit()
+
 
 try:
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(ADDR)
-    print("Connection Successfull. Authentication...")
+    print("Connection Successfull. Authenticating...")
+    Authenticated[1] = True
 except:
     print('Please retry with correct IP:PORT.')
 else:
@@ -24,13 +38,22 @@ else:
 def client_receive():
     while True:
         try:
-            message = client.recv(1024).decode('utf-8')
+            message = client.recv(1024).decode(encodeFormat)
             
-            if message == "EMAIL?":
-                client.send(EMAIL.encode('utf-8'))
+            if not message:
+                raise socket.error("Lost Connection")
+            
+            elif message == "regORlog":
+                client.send(regORlog.encode(encodeFormat))
+            
+            elif message == "NAME?":
+                client.send(NAME.encode(encodeFormat))
+                
+            elif message == "EMAIL?":
+                client.send(EMAIL.encode(encodeFormat))
                 
             elif message == "PASSWD?":
-                client.send(PASSWD.encode('utf-8'))
+                client.send(PASSWD.encode(encodeFormat))
                 
             elif message == "AuthSuccessfull":
                 Authenticated[0] = True
@@ -42,9 +65,10 @@ def client_receive():
                 
             else:
                 print(message)
+                
         except socket.error as msg:
             print(f"EXITED WITH ERROR: {msg} ")
-            Authenticated[0] = False
+            Authenticated[1] = False
             client.close()
             break
     return
@@ -52,23 +76,22 @@ def client_receive():
 
 def client_send():
     while True:
-        
-        if Authenticated[0]:
-            message = (input (''))
-            try:
-                client.send(message.encode('utf-8'))
-                if message == '!dc':
-                    client.close()
+        if Authenticated[1]:
+            if Authenticated[0]:
+                message = (input (''))
+                try:
+                    client.send(message.encode(encodeFormat))
+                    if message == '!dc':
+                        client.close()
+                        break
+                except socket.error as msg:
+                    print(f'Error Sending Message : {msg} ')
                     break
-            except socket.error as msg:
-                print(f'Error Sending Message : {msg} ')
-                break
+        else:
+            break
     return
 
 receive_thread = threading.Thread(target=client_receive, daemon=True)
 receive_thread.start()
 
 client_send()
-
-#send_thread = threading.Thread(target=client_send)
-#send_thread.start()
