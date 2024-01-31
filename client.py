@@ -4,7 +4,7 @@ import time
 
 DISCONNECT_MESSAGE = "!dc"
 encodeFormat = 'utf-8'
-Authenticated = [False]
+Authenticated = [False,True]
 
 INPUT = input('TARGET_IP:PORT -> ')
 SERVER = INPUT.split(':')[0]
@@ -28,7 +28,8 @@ else:
 try:
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(ADDR)
-    print("Connection Successfull. Authentication...")
+    print("Connection Successfull. Authenticating...")
+    Authenticated[1] = True
 except:
     print('Please retry with correct IP:PORT.')
 else:
@@ -39,7 +40,10 @@ def client_receive():
         try:
             message = client.recv(1024).decode(encodeFormat)
             
-            if message == "regORlog":
+            if not message:
+                raise socket.error("Lost Connection")
+            
+            elif message == "regORlog":
                 client.send(regORlog.encode(encodeFormat))
             
             elif message == "NAME?":
@@ -64,7 +68,7 @@ def client_receive():
                 
         except socket.error as msg:
             print(f"EXITED WITH ERROR: {msg} ")
-            Authenticated[0] = False
+            Authenticated[1] = False
             client.close()
             break
     return
@@ -72,17 +76,19 @@ def client_receive():
 
 def client_send():
     while True:
-        
-        if Authenticated[0]:
-            message = (input (''))
-            try:
-                client.send(message.encode(encodeFormat))
-                if message == '!dc':
-                    client.close()
+        if Authenticated[1]:
+            if Authenticated[0]:
+                message = (input (''))
+                try:
+                    client.send(message.encode(encodeFormat))
+                    if message == '!dc':
+                        client.close()
+                        break
+                except socket.error as msg:
+                    print(f'Error Sending Message : {msg} ')
                     break
-            except socket.error as msg:
-                print(f'Error Sending Message : {msg} ')
-                break
+        else:
+            break
     return
 
 receive_thread = threading.Thread(target=client_receive, daemon=True)
