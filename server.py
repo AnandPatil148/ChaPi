@@ -12,17 +12,9 @@ host = 'localhost'
 user = 'Anand'
 password = 'anand'
 
-conn = mysql.connector.connect(host = host,
-                               user = user,
-                               passwd = password,
-                               database = 'login')
-
-print("[DATABASE] Connection to Database was Successfull")
-
-cursor = conn.cursor()
 
 # Server Related Variables
-
+encodeFormat = 'utf-8'
 INPUT = input('SERVER_IP:PORT -> ')
 SERVER = INPUT.split(':')[0]
 PORT = int(INPUT.split(':')[1])
@@ -49,6 +41,7 @@ def commands():
                 
         elif cmd == '!stop':
             broadcast("Server Stopping in 2 Sec")
+            print("Server Stopping in 2 Sec")
             time.sleep(2)
             
             for CLIENT in CLIENTS:
@@ -62,7 +55,7 @@ def commands():
 def broadcast(message):
     try:
         for CLIENT in CLIENTS:
-            send_msg = message.encode('utf-8')
+            send_msg = message.encode(encodeFormat)
             CLIENT.send(send_msg)
     except socket.error:
         return
@@ -74,15 +67,9 @@ def broadcast(message):
 def handle_client(CLIENT, NAME):
     while True:
         try:
-            message = CLIENT.recv(1024).decode('utf-8')
+            message = CLIENT.recv(1024).decode(encodeFormat)
             if not message:
                 raise socket.error()
-                broadcast(f'{NAME} has left the chat room!')  
-                print (f'[DISCONNECTED] {NAME} has disconnected')      
-                CLIENTS.remove(CLIENT)
-                NAMES.remove(NAME)
-                CLIENT.close()
-                break
             
             broadcast(f'{NAME}: {message}')
             print (f'[MSG] {NAME}: {message}')
@@ -99,14 +86,40 @@ def handle_client(CLIENT, NAME):
 # Performs Authentication of Clients
 
 def Authenticator(CLIENT:socket.socket, address):
+    conn = mysql.connector.connect(host = host,
+                               user = user,
+                               passwd = password,
+                               database = 'login')
+    
+    cursor = conn.cursor()
+    
     try:
-        # Get Clients Email      
-        CLIENT.send('EMAIL?'.encode('utf-8'))
-        EMAIL = CLIENT.recv(1024).decode('utf-8')
         
-        # Get Clients Password
-        CLIENT.send('PASSWD?'.encode('utf-8'))
-        PASSWD = CLIENT.recv(1024).decode('utf-8')
+        CLIENT.send('regORlog'.encode(encodeFormat))
+        regORlog = CLIENT.recv(1024).decode(encodeFormat)
+        
+        if regORlog == 'r':
+            CLIENT.send('NAME?'.encode(encodeFormat))
+            NAME = CLIENT.recv(1024).decode(encodeFormat)
+            
+            CLIENT.send('EMAIL?'.encode(encodeFormat))
+            EMAIL = CLIENT.recv(1024).decode(encodeFormat)
+            
+            CLIENT.send('PASSWD?'.encode(encodeFormat))
+            PASSWD = CLIENT.recv(1024).decode(encodeFormat)
+            
+            query = f"INSERT INTO info (NAME,EMAIL,PASSWD) VALUES ('{NAME}', '{EMAIL}', '{PASSWD}');"
+            cursor.execute(query)
+            conn.commit()
+            
+        elif regORlog == 'l':
+            # Get Clients Email      
+            CLIENT.send('EMAIL?'.encode(encodeFormat))
+            EMAIL = CLIENT.recv(1024).decode(encodeFormat)
+            
+            # Get Clients Password
+            CLIENT.send('PASSWD?'.encode(encodeFormat))
+            PASSWD = CLIENT.recv(1024).decode(encodeFormat)
         
         query = f"SELECT PASSWD FROM info WHERE EMAIL = '{EMAIL}';"
         cursor.execute(query)
@@ -122,7 +135,7 @@ def Authenticator(CLIENT:socket.socket, address):
             CLIENTS.append(CLIENT)
             NAMES.append(NAME)
             
-            CLIENT.send('AuthSuccessfull'.encode('utf-8'))          
+            CLIENT.send('AuthSuccessfull'.encode(encodeFormat))          
             print(f'[USER] User with Address {str(address)} and Name "{NAME}" joined Lobby')
                     
             time.sleep(1)
@@ -136,12 +149,12 @@ def Authenticator(CLIENT:socket.socket, address):
                         
         else:
             
-            CLIENT.send("Authentication Failed. Retry with Correct Email and Password".encode('utf-8'))
+            CLIENT.send("Authentication Failed. Retry with Correct Email and Password".encode(encodeFormat))
             print(f'[DISCONNECTED] Connection with {str(address)} Closed Due to Failed Authentication')
             CLIENT.close()
                        
     except socket.error as msg:
-        print(f"[DISCONNECTED] {str(address)} DISCONNECTED WITH ERROR : {msg}")
+        print(f"[DISCONNECTED] {str(address)} DISCONNECTED ABRUPTLY WITH ERROR : {msg}")
         
     finally:
         return
@@ -156,9 +169,7 @@ def receive():
         print(f'[CONNECTED] Connection is established with {str(address)}')
         
         authThread = threading.Thread(target=Authenticator, args=(CLIENT,address), daemon=True)
-        authThread.start()
-    return
-            
+        authThread.start()            
 
 receiveThread = threading.Thread(target=receive, daemon=True)
 receiveThread.start()
