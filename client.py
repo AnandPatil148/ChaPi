@@ -6,20 +6,24 @@ DISCONNECT_MESSAGE = "!dc"
 encodeFormat = 'utf-8'
 Authenticated = [False,True]
 
-INPUT = input('TARGET_IP:PORT -> ')
-SERVER = INPUT.split(':')[0]
-PORT = int(INPUT.split(':')[1])
+SERVER = ('127.0.0.1')
+PORT = 5050
 ADDR = (SERVER, PORT)
 
-regORlog = input("Register Or Login (r/l): ")
+#regORlog = input("Register Or Login (r/l): ")
+regORlog = ("l")
 
 if  regORlog == 'r':
     NAME = input("Enter Username :")
     EMAIL = input("Enter Email: ")
     PASSWD = input("Enter Password: ")
 elif regORlog == 'l':
+    '''
     EMAIL = input("Enter Email: ")
     PASSWD = input("Enter Password: ")
+    '''
+    EMAIL = ("test@test.com")
+    PASSWD = ("test")
 else:
     print("Invalid Option.")
     exit()
@@ -75,21 +79,20 @@ def client_receive():
 
 
 def client_send():
-    while True:
-        if Authenticated[1]:
-            if Authenticated[0]:
-                message = (input (''))
-                try:
-                    client.send(message.encode(encodeFormat))
-                    if message == '!dc':
-                        client.close()
-                        break
-                except socket.error as msg:
-                    print(f'Error Sending Message : {msg} ')
+    while Authenticated[1]:
+        if Authenticated[0]:
+            message = (input (''))
+            
+            try:
+                client.send(message.encode(encodeFormat))
+                if message == '!dc':
+                    client.close()
                     break
-        else:
-            break
-    return
+                
+            except socket.error as msg:
+                print(f'Error Sending Message : {msg} ')
+                break
+    exit()
 
 receive_thread = threading.Thread(target=client_receive, daemon=True)
 receive_thread.start()
