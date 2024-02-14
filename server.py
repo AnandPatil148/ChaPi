@@ -7,9 +7,11 @@ import socket
 import time
 import json
 
-host = '172.27.224.1'
-user = 'login'
-password = 'login'
+host = '172.26.96.1'
+user = 'server'
+password = 'server'
+loginDatabase = 'login'
+roomDatabase = 'roomdata'
 
 encodeFormat = 'utf-8'
 SERVER = ('127.0.0.1')
@@ -54,10 +56,11 @@ def broadcast(message: str, roomname: str):
 def join_room(CLIENT, NAME, roomToJoin: str, roomToLeave: str):
     if roomToJoin not in ROOMS:
         ROOMS[roomToJoin] = []
+        
     ROOMS[roomToLeave].remove(CLIENT)
     ROOMS[roomToJoin].append(CLIENT)
     broadcast(f'[{NAME}] has joined the room {roomToJoin}', roomToJoin)
-    print(f'[{NAME}] has joined the room {roomToJoin}')
+    print(f'[JOINED] [{NAME}] has joined the room {roomToJoin}')
 
 #Leaves a room and Joins Lobby
 def leave_room(CLIENT, NAME, roomname: str):
@@ -98,9 +101,24 @@ def create_block(t, roomname, userID, NAME , message, BlockChainSocket):
     
     BlockChainSocket.send(dataString.encode(encodeFormat)) #send json string to blockchain server
 
+#Saves Data to database
+def save_to_db(t, roomname, userID, NAME , message, conn):
+    
+    cursor = conn.cursor()
+    
+    #Collect data in the form of a string   
+    data = f"{userID} - {NAME}:{message}"
+    
+    query = f"INSERT INTO {roomname} (TimeStamp,Post) VALUES('{t}','{data}');"
+    cursor.execute(query)
+    conn.commit()  # Commit the changes to the database
+
+    conn.close()
+
 #Handles all client connections
 def HandleClient(CLIENT: socket.socket, NAME: str, userID:str, roomname: str):
     
+    #Create a new BlockChain socket for each connection
     try:
         #Connects To The BlockChain Node
         BlockChainSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) 
@@ -110,21 +128,24 @@ def HandleClient(CLIENT: socket.socket, NAME: str, userID:str, roomname: str):
     except:
         print("[FAILED] Couldn't connect to Blockchain Node. Running Offline mode")
         connectedToBlockChain = False
-        
+    
+    #Connector to mysql server  
+    conn = mysql.connector.connect(host=host, user=user, passwd=password, database=roomDatabase)
     
     while True:
         try:
             message = CLIENT.recv(1024).decode(encodeFormat)
-            
-            t = datetime.datetime.now().strftime('%m-%d-%y %H:%M:%S') #Time at which Message was recceived by server
-            
+        
+            #Time at which Message was recceived by server
+            t = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # '2024-02-14 01:13:15'
+
             if not message:
                 raise socket.error()
 
             if message.startswith('!join'):
-                new_room = message.split(" ")[1]
-                join_room(CLIENT, NAME, new_room, roomname)
-                roomname = new_room  # Update the current room of the client
+                roomToJoin = message.split(" ")[1]
+                join_room(CLIENT, NAME, roomToJoin, roomname)
+                roomname = roomToJoin  # Update the current room of the client
 
             elif message.startswith('!leave'):
                 leave_room(CLIENT, NAME, roomname)
@@ -134,8 +155,10 @@ def HandleClient(CLIENT: socket.socket, NAME: str, userID:str, roomname: str):
                 broadcast(f'{NAME}: {message}', roomname)
                 print(f'[MSG] {roomname} - {NAME}: {message}')
                 
+                save_to_db(t, roomname, userID, NAME, message, conn)
+                
                 if connectedToBlockChain:
-                    create_block(t, roomname, userID, NAME, message, BlockChainSocket)
+                    create_block(t, roomname, userID, NAME, message, BlockChainSocket) #Forges/Mints Block on BlockChain
                 
                 
 
@@ -149,7 +172,7 @@ def HandleClient(CLIENT: socket.socket, NAME: str, userID:str, roomname: str):
             break
 
 def Authenticator(CLIENT: socket.socket, address):
-    conn = mysql.connector.connect(host=host, user=user, passwd=password)
+    conn = mysql.connector.connect(host=host, user=user, passwd=password, database=loginDatabase)
     cursor = conn.cursor()
 
     try:
@@ -165,6 +188,7 @@ def Authenticator(CLIENT: socket.socket, address):
 
             CLIENT.send('PASSWD?'.encode(encodeFormat))
             PASSWD = CLIENT.recv(1024).decode(encodeFormat)
+            
             HashedPASSWD, salt  = hash_password(PASSWD)
 
             #Insert Data into Database
@@ -190,10 +214,12 @@ def Authenticator(CLIENT: socket.socket, address):
         
 
         elif check_password(PASSWD, result[0], result[1]):
-            query = f"SELECT ID,NAME FROM login.info WHERE EMAIL = '{EMAIL}'"
+            query = f"SELECT ID,NAME FROM info WHERE EMAIL = '{EMAIL}'"
             cursor.execute(query)
-            NAME = cursor.fetchone()[0] # Gets Client Name from database 
-            userID = cursor.fetchone()[1] # Gets Client userID from database
+            result = cursor.fetchone()
+            
+            userID = result[0] # Gets Client userID from database
+            NAME = result[1] # Gets Client Name from database 
             
             CLIENTS.append(CLIENT)
             NAMES.append(NAME)
