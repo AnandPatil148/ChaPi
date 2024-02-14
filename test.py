@@ -5,7 +5,8 @@ from uuid import uuid4
 from flask import Flask, jsonify, request
 
 
-t = datetime.datetime.now().strftime('%m-%d-%y %H:%M:%S')  # '02-17-13 14:58:5
+t = datetime.datetime.now()
+t.strftime('%y-%m-%d %H:%M:%S')  # '2024-02-14 01:13:15
 
 print(t)
 
