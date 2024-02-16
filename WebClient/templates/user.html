@@ -4,6 +4,17 @@
 
 {% block body %}
 
-    <p> {{NAME}} </p>
+<p> Welcome  {{NAME}} </p>
+
+<form action="#" method="post">
+    <p>Name</p>
+    <p> <input type="email" name="EMAIL" placeholder="Enter Email" value="{{ email if email }}" /> </p>
+    <p> <input type="submit"  value="Save"/> </p>
+    
+</form>
+
+<form action="/logout/" method="get">
+    <p> <input type="submit"  value="Logout" /> </p>
+</form>
 
 {% endblock %}

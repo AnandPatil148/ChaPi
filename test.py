@@ -3,7 +3,16 @@ import hashlib
 import json
 from uuid import uuid4
 from flask import Flask, jsonify, request
+import os
 
+ip = os.system("ifconfig")
+print(ip)
+print(type(ip))
+
+
+
+
+'''
 
 t = datetime.datetime.now()
 t.strftime('%y-%m-%d %H:%M:%S')  # '2024-02-14 01:13:15
@@ -33,7 +42,6 @@ print(len(hashlib.sha256(passwd.encode('utf-8')).hexdigest()))
 #ataString2 = '{"Time": "02-02-24 15:43:41", "Roomname": "lobby", "UserID": "1", "Name": "Test", "Message": "HEHE"}'
 
 
-'''
 # Instantiate the Node
 app = Flask(__name__)
 
