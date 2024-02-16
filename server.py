@@ -7,7 +7,8 @@ import socket
 import time
 import json
 
-host = '172.26.96.1'
+# Set up the database connection
+host = '172.19.48.1' 
 user = 'server'
 password = 'server'
 loginDatabase = 'login'
@@ -107,13 +108,12 @@ def save_to_db(t, roomname, userID, NAME , message, conn):
     cursor = conn.cursor()
     
     #Collect data in the form of a string   
-    data = f"{userID} - {NAME}:{message}"
+    data = f"{NAME}:{message}"
     
-    query = f"INSERT INTO {roomname} (TimeStamp,Post) VALUES('{t}','{data}');"
+    query = f"INSERT INTO {roomname} (TimeStamp, UserID, Post) VALUES('{t}',{userID}, '{data}');"
     cursor.execute(query)
     conn.commit()  # Commit the changes to the database
 
-    conn.close()
 
 #Handles all client connections
 def HandleClient(CLIENT: socket.socket, NAME: str, userID:str, roomname: str):
@@ -154,7 +154,7 @@ def HandleClient(CLIENT: socket.socket, NAME: str, userID:str, roomname: str):
             else:
                 broadcast(f'{NAME}: {message}', roomname)
                 print(f'[MSG] {roomname} - {NAME}: {message}')
-                
+
                 save_to_db(t, roomname, userID, NAME, message, conn)
                 
                 if connectedToBlockChain:
@@ -164,7 +164,7 @@ def HandleClient(CLIENT: socket.socket, NAME: str, userID:str, roomname: str):
 
         except socket.error as msg:
             broadcast(f'{NAME} has left the chat room!', roomname)
-            print(f'[DISCONNECTED] {NAME} has disconnected with Error Message {msg}')
+            print(f'[DISCONNECTED] {NAME} has disconnected')
             CLIENTS.remove(CLIENT)
             NAMES.remove(NAME)
             ROOMS[roomname].remove(CLIENT)
@@ -251,7 +251,9 @@ def receive():
         authThread = threading.Thread(target=Authenticator, args=(CLIENT, address), daemon=True)
         authThread.start()
 
+'''
 receiveThread = threading.Thread(target=receive, daemon=True)
 receiveThread.start()
 
 commands()
+'''
