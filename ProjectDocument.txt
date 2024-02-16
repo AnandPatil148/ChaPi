@@ -1,1 +1,9 @@
-Youtube Video Reference : https://www.youtube.com/watch?v=iIhAfX4iek0
+Youtube Video Reference : https://www.youtube.com/watch?v=uZnp21fu8TQ
+
+Make Post IDs
+Make Email/Name login
+Make Database connectivity
+Show Posts dynammically 
+Add Comments to each post 
+BlockChain connectivity thru sockets
+Realtime WebSockets Programming
