@@ -4,11 +4,11 @@ import json
 
 class Block():
     
-    def __init__(self,index:int, timestamp:str, data:dict):
+    def __init__(self,index:int, timestamp:str, data:dict, previousHash:str):
         self.index = index
         self.timestamp = timestamp
         self.data = data
-        self.previousHash = ""
+        self.previousHash = previousHash
         # Calculate the hash of block
         self.hash = self.calculateHash()
         
