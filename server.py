@@ -8,7 +8,8 @@ import time
 import json
 
 # Set up the database connection
-host = '172.19.48.1' 
+host = 'localhost' 
+port = 3306
 user = 'server'
 password = 'server'
 loginDatabase = 'login'
@@ -83,8 +84,8 @@ def hash_password(passwordToHash, salt=None):
 def check_password(passwordToCheck, storedHashOfPassword, storedSalt):
     # Use the same process to hash the given password,
     # and compare it with the stored password
-    generated_password = hash_password(passwordToCheck, storedSalt)[0]
-    return generated_password == storedHashOfPassword
+    generated_new_hash = hash_password(passwordToCheck, storedSalt)[0]
+    return generated_new_hash == storedHashOfPassword
 
 #Creates Block On BlockChain
 def create_block(t, roomname, userID, NAME , message, BlockChainSocket):
@@ -116,7 +117,7 @@ def save_to_db(t, roomname, userID, NAME , message, conn):
 
 
 #Handles all client connections
-def HandleClient(CLIENT: socket.socket, NAME: str, userID:str, roomname: str):
+def HandleClient(CLIENT: socket.socket, NAME: str, userID:int, roomname: str):
     
     #Create a new BlockChain socket for each connection
     try:
@@ -251,9 +252,8 @@ def receive():
         authThread = threading.Thread(target=Authenticator, args=(CLIENT, address), daemon=True)
         authThread.start()
 
-'''
+
 receiveThread = threading.Thread(target=receive, daemon=True)
 receiveThread.start()
 
 commands()
-'''
