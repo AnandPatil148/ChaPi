@@ -4,20 +4,32 @@
 
 {% block body %}
 
-    {% with messages = get_flashed_messages() %}
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+    {% for msg in messages %}
+        <p> {{msg}} </p>
+    {% endfor %}
+{% endif %}
+{% endwith %}
 
-        {% if messages %}
-            {% for msg in messages %}
-                <p> {{msg}} </p>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+<div class="login-container">
+    <form action="#" method="post">
 
-<form action="#" method="post">
-    <p>UserName</p>
-    <p> <input type="text" name="NAME" placeholder="Enter UserName" /> </p>
-    <p> <input type="submit"  value="Submit"/> </p>
-</form>
+        <p>Please Login</p>
+        <p>UserName : </p>
+        <p> <input type="text" name="NAME" placeholder="Enter UserName" /> </p>
+        
+        <p>Password: </p>
+        <p> <input type="password" name="PASSWD" placeholder="Enter Password" /> </p>
+    
+        <p> <input type="submit"  value="Submit"/> </p>
+    </form>
+</div>
+
+<div class="signup-link">
+    Don't have an account? Click here to <a href="/signup/">Sign Up</a>.
+</div>
+
 
 
 {% endblock %}

@@ -4,19 +4,10 @@
 
 {% block body %}
 
-    {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            {% for msg in messages %}
-                <p> {{msg}} </p>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
 <p> Welcome  {{NAME}} </p>
 
 <form action="#" method="post">
-    <p>Email:</p>
-    <p> <input type="email" name="EMAIL" placeholder="Enter Email" value="{{EMAIL if EMAIL}}" /> </p>
+    <p>Email: &nbsp;&nbsp;  <input type="email" name="EMAIL" placeholder="Enter Email" value="{{EMAIL if EMAIL}}" /> </p>
     <p> <input type="submit"  value="Save"/> </p>
     
 </form>

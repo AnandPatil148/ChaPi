@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %} SignUp Page {% endblock %}
+
+{% block body %}
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+    {% for msg in messages %}
+        <p> {{msg}} </p>
+    {% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="signup-container">
+    <form action="#" method="post">
+        <p>Please Enter  your Information:</p><br/>
+        
+        <label for="username">Username:</label><br/>
+        <p> <input type="text" name="NAME" placeholder="Enter UserName" /> </p>
+        <label for="email">Email:</label><br />
+        <p> <input type="email" name="EMAIL" placeholder="Enter Email" /> </p>
+        
+        <label for="password">Password:</label><br/>
+        <p> <input type="password" name="PASSWD" placeholder="Enter Password" /> </p>
+        
+        <label for="password">Confirm Password:</label><br/>
+        <p> <input type="password" name="CPASSWD" placeholder="Re-Enter Password" /> </p>
+
+        <p> <input type="submit"  value="Submit"/> </p>
+    </form>
+</div>
+
+
+{% endblock %}

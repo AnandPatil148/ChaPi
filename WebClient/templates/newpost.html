@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %} New Post {% endblock %}
+
+{% block body %}
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+    {% for msg in messages %}
+        <p> {{msg}} </p>
+    {% endfor %}
+{% endif %}
+{% endwith %}
+
+<h1>Create a New Post</h1>
+
+<form action="#" method="post">
+    <p>Post Message</p>
+    <p> <input type="text" name="POSTMSG" placeholder="Enter Post Message" /> </p>
+    <p> <input type="submit"  value="Submit"/> </p>
+</form>
+
+{% endblock %}

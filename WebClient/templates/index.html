@@ -2,8 +2,20 @@
 
 {% block title %} Home Page {% endblock %}
 
-{% block body %} 
+{% block body %}
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+          {% for msg in messages %}
+              <p> {{msg}} </p>
+          {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+
 
 <h1>Welcome to the home page!</h1>
+<p>This is a simple website created using Flask.</p>
+
 
 {% endblock %}
