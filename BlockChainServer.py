@@ -97,7 +97,7 @@ def startservers():
     receive_thread = threading.Thread(target=receive)
     receive_thread.start()
 
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=5050)
     
 startservers()
 
