@@ -1,9 +1,16 @@
 Youtube Video Reference : https://www.youtube.com/watch?v=uZnp21fu8TQ
 
-Make Post IDs
+Make Post IDs = index on BlockChain
+Mame Room IDs
 Make Email/Name login
-Make Database connectivity
+Add Side bar for  navigation (Home, About Us, Contact Us) and Rooms listing (Bootstrap)
+Create a function to get all the posts from blockchain when page loads
+Display the first post in Home Page
+When user clicks "Next" button it should display next post
+Check which all rooms a user is present in to see the respective posts
 Show Posts dynammically 
 Add Comments to each post 
 BlockChain connectivity thru sockets
 Realtime WebSockets Programming
+DONE - Make Registration Form with Name, Email and Password fields 
+DONE - Make Database connectivity
