@@ -5,7 +5,8 @@ Mame Room IDs
 Make Email/Name login
 Add Side bar for  navigation (Home, About Us, Contact Us) and Rooms listing (Bootstrap)
 Create a function to get all the posts from blockchain when page loads
-Display the first post in Home Page
+Display the recent post in Home Page
+Make it so that more posts load when user scrolls using WebSockets.
 When user clicks "Next" button it should display next post
 Check which all rooms a user is present in to see the respective posts
 Show Posts dynammically 
