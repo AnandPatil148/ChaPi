@@ -7,15 +7,22 @@
     {% with messages = get_flashed_messages() %}
       {% if messages %}
           {% for msg in messages %}
-              <p> {{msg}} </p>
+              <div class="alert alert-success" role="alert">
+                {{msg}}
+              </div>
           {% endfor %}
       {% endif %}
     {% endwith %}
 
 
 
-<h1>Welcome to the home page!</h1>
-<p>This is a simple website created using Flask.</p>
+<h1>Welcome to Orbit!</h1>
+<p>This is a simple posting website created using Flask.</p>
+
+
+
+<p id="demo">This is a simple website created using Flask.</p>
+<button type="button" onclick="myFunction()">Try it</button>
 
 
 {% endblock %}
