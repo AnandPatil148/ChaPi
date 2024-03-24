@@ -14,8 +14,10 @@ app = Flask(__name__)
 #socketIO = SocketIO(app)
 
 # Set up the database connection
-host = 'localhost' 
-port = 3306
+#host = 'localhost' 
+#port = 3306
+host = '19.ip.gl.ply.gg' 
+port = 6882
 username = 'server'
 password = 'server'
 loginDatabase = 'login'
@@ -26,7 +28,9 @@ conn = mysql.connector.connect(host=host, port=port, user=username, passwd=passw
 
 cursor = conn.cursor(buffered=True)
 
-
+#BCN params
+BCN_ip = '180.ip.ply.gg'
+BCN_port = 12378
 
 # Setup the secret key for sessions
 app.config.from_pyfile('config.py')
@@ -183,7 +187,7 @@ def room(roomname):
         else:
             
             BCN = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP Conn to Blockchain Nodes
-            BCN.connect(('127.0.0.1', 6969))    # Connecting with local BCS Server (localhost:6969)
+            BCN.connect((BCN_ip, BCN_port))    # Connecting with local BCS Server (localhost:6969)
             
             BCNquery = f"GET 1 FROM {roomname}" # Query for getting data from the blockchain
             BCN.send(BCNquery.encode('utf-8')) # Sends the Query
@@ -259,5 +263,5 @@ def logout():
 
 
 #socketIO.run(app=app, host='0.0.0.0', port=8080, debug=True)
-app.run(host = '0.0.0.0', port = 8080, debug = True)
+#app.run(host = '0.0.0.0', port = 8080, debug = True)
 
