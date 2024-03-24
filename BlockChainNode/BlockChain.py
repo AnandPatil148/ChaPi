@@ -31,30 +31,57 @@ class Blockchain():
         """
         Initialize the blockchain with a genesis block.
         """
-        self.chain = [self.createGenesisBlock(), self.createStartBlock('Test')]
+        self.chain = [self.createGenesisBlock()]
+
         self.wallets = {}  # Dictionary to store wallet addresses and blockchain identities
-        
+    
+    def getChainLength(self):
+        """Returns the length of the chain."""
+        return len(self.chain)
+    
     def createGenesisBlock(self):
         """
         Create and return the genesis block of the blockchain.
         """
         
-        return Block(0, datetime.datetime.now().strftime('%m-%d-%y %H:%M:%S'), data = {
+        genesisBlock = Block(0, datetime.datetime.now().strftime('%m-%d-%y %H:%M:%S'), data = {
         'TimeStamp': datetime.datetime.now().strftime('%m-%d-%y %H:%M:%S'),  #TimeStamp of the message
         'RoomName': 'Lobby',  # Room name from which the client chats from
         'UserID': 'SERVER',  # User ID for tracking user activity
         'Name': 'SERVER', # UserName for the user who is chatting
         'Message': 'GenesisBlock' , # Message to be sent by the user
         })
+        
+        with open('chain.json', 'r+', encoding='utf-8') as f:
+            
+            file_data = json.load(f)
+            
+            file_data["Blocks"].append(genesisBlock.toDict())
+            f.seek(0)
+            json.dump(file_data, f, ensure_ascii=False, indent=4)
+
+        return genesisBlock
     
-    def createStartBlock(self,roomname):
-        return Block(0, datetime.datetime.now().strftime('%m-%d-%y %H:%M:%S'), data = {
+    def createRoomGenesisBlock(self, roomname):
+        roomStartBlock = Block(self.getChainLength(), datetime.datetime.now().strftime('%m-%d-%y %H:%M:%S'), data = {
         'TimeStamp': datetime.datetime.now().strftime('%m-%d-%y %H:%M:%S'),  #TimeStamp of the message
         'RoomName': f'{roomname}',  # Room name from which the client chats from
         'UserID': 'SERVER',  # User ID for tracking user activity
         'Name': 'SERVER', # UserName for the user who is chatting
         'Message': 'GenesisBlock' , # Message to be sent by the user
         })
+        
+        self.addBlock(roomStartBlock)
+        
+        with open('chain.json', 'r+', encoding='utf-8') as f:
+            
+            file_data = json.load(f)
+            
+            file_data["Blocks"].append(roomStartBlock.toDict())
+            f.seek(0)
+            json.dump(file_data, f, ensure_ascii=False, indent=4)
+        
+        return roomStartBlock
 
     def getLatestBlock(self):
         """
@@ -70,6 +97,14 @@ class Blockchain():
         newBlock.previousHash = self.getLatestBlock().hash
         newBlock.hash = newBlock.calculateHash()
         self.chain.append(newBlock)
+        
+        with open('chain.json', 'r+', encoding='utf-8') as f:
+            
+            file_data = json.load(f)
+            
+            file_data["Blocks"].append(newBlock.toDict())
+            f.seek(0)
+            json.dump(file_data, f, ensure_ascii=False, indent=4)
 
     def toDict(self):
         """

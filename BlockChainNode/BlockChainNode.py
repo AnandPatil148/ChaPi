@@ -21,6 +21,7 @@ SERVERS = []
 NODES = []
 
 Orbit = Blockchain()
+Orbit.createRoomGenesisBlock("Test")
 Orbit.load_data("wallets.json")
 
 
