@@ -7,29 +7,29 @@ import datetime
 import secrets
 import socket
 import hashlib
+import json
 
 
 app = Flask(__name__)
-socketIO = SocketIO(app)
+#socketIO = SocketIO(app)
 
 # Set up the database connection
 host = 'localhost' 
 port = 3306
-user = 'server'
+username = 'server'
 password = 'server'
 loginDatabase = 'login'
 roomDatabase = 'roomdata'
 
 #Connect to mysql server 
-conn = mysql.connector.connect(host=host, port=port, user=user, passwd=password, )
+conn = mysql.connector.connect(host=host, port=port, user=username, passwd=password, )
 
 cursor = conn.cursor(buffered=True)
 
-#BCS = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP Conn to Blockchain servers
-#BCS.connect(('127.0.0.1', 6969))    # Connecting with local BCS Server (localhost:6969)
+
 
 # Setup the secret key for sessions
-app.secret_key = "yomamagey"
+app.config.from_pyfile('config.py')
 app.permanent_session_lifetime = timedelta(days=5)
 
 #Hashes Password
@@ -52,8 +52,8 @@ def check_password(passwordToCheck, storedHashOfPassword, storedSalt):
 
 @app.route("/")
 def index():
-    if "NAME" in session:
-        return render_template("index.html")
+    if "USERID" in session: #Checks if user is logged in
+        return render_template("index.html"  , ROOMS = session["ROOMS"])
     
     else:
         return redirect(url_for("login"))
@@ -113,24 +113,27 @@ def login():
             
             data = cursor.fetchone()
             
-            if not data or not check_password(PASSWD, data[3], data[4]):
-                flash("Incorrect username or password.")
-                return redirect(url_for("index"))
+            if not data:
+                raise Exception ("Account Not Found. Please Signup")
             
+            if not check_password(PASSWD, data[3], data[4]):
+                raise Exception ("Incorrect username or password.")
+                            
             session["USERID"] = data[0]
             session["NAME"] = data[1]
             session["EMAIL"] = data[2]       
+            session["ROOMS"] = data[5]       
             flash('Logged In!')
                         
         except Exception as e:
             print(e)
             flash("An error occurred while trying to log in.")
-            return redirect(url_for("index"))
+            flash(f"Error Message - {e}")
             
         return redirect(url_for("index"))      
      
     else: #If Method is GET
-        if "NAME" in session:
+        if "USERID" in session:
             return redirect(url_for("user"))
 
         else:
@@ -140,7 +143,8 @@ def login():
 def user():
     EMAIL = None
     
-    if "NAME" in session:
+    if "USERID" in session:
+        USERID = session["USERID"]
         NAME = session["NAME"]
         
         if request.method == "POST":
@@ -148,8 +152,8 @@ def user():
             session["EMAIL"] = EMAIL
             flash(f"Email Successfully Saved", "info") #Update email in db
             
-            query = "UPDATE login.info SET EMAIL=%s WHERE NAME=%s"
-            params = (EMAIL, NAME, )
+            query = "UPDATE login.info SET EMAIL=%s WHERE USERID=%s"
+            params = (EMAIL, USERID)
             cursor.execute(query,params)
             conn.commit()             
             
@@ -157,7 +161,7 @@ def user():
             if "EMAIL" in session:
                EMAIL = session["EMAIL"]
                         
-        return render_template("user.html", NAME = NAME, EMAIL = EMAIL)
+        return render_template("user.html", NAME = NAME, EMAIL = EMAIL, ROOMS = session["ROOMS"])
     
     else:
         return redirect(url_for("login"))
@@ -165,16 +169,40 @@ def user():
     
 @app.route("/room/<roomname>/")
 def room(roomname):
-    #Check if User can access room
-    session["ROOM"] = roomname
-
-    return render_template("room.html", roomname = roomname)
-    #return redirect(url_for('room'))
+    #check if user has logged in
+    if "USERID" not in session:  
+        return redirect(url_for('login'))  
+    
+    else:
+        #Check if User can access room
+        ROOMS = session["ROOMS"]
+        if roomname not in ROOMS: 
+            flash("You don't have permission to view this page.")
+            return redirect(url_for("index"))
+      
+        else:
+            
+            BCN = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP Conn to Blockchain Nodes
+            BCN.connect(('127.0.0.1', 6969))    # Connecting with local BCS Server (localhost:6969)
+            
+            BCNquery = f"GET 1 FROM {roomname}" # Query for getting data from the blockchain
+            BCN.send(BCNquery.encode('utf-8')) # Sends the Query
+            dataString = BCN.recv(4096).decode('utf-8') # Receive Data from BCS server and decode it into utf-8 format
+            Block = json.loads(dataString)       # Loads into Dictionary form
+            
+            if Block != None:
+                BlockData = Block["Data"]
+            else:
+                BlockData = []
+            
+            BCN.close()
+            return render_template("room.html", roomname = roomname, ROOMS = session["ROOMS"], dataDict = BlockData)
 
 
 @app.route("/room/<roomname>/newpost/" , methods=["GET", "POST"])
 def newpost(roomname):
     
+    #check if user has logged in
     if request.method == "POST":
         
         message = request.form.get("POSTMSG", "")
@@ -187,13 +215,35 @@ def newpost(roomname):
         #Time at which Message was recceived by server
         t = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # '2024-02-14 01:13:15'
         NAME = session["NAME"]
+        UserID = session["USERID"]
         
-        print(f"{t}:{roomname} - {NAME}: {message}")
+        #Collect data in the form of Dictionary
+        data = {
+            'TimeStamp': t,  #TimeStamp of the message
+            'RoomName': roomname,  # Room name from which the client chats from
+            'UserID': UserID,  # User ID for tracking user activity
+            'Name': NAME, # UserName for the user who is chatting
+            'Message': message, # Message to be sent by the user
+        }
+
+
+        dataString = json.dumps(data) #convert to json string
+
+        print(dataString)
+        
+        BCS = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP Conn to Blockchain servers
+        BCS.connect(('127.0.0.1', 6969))    # Connecting with local BCS Server (localhost:6969)
+        
+        BCS.send(dataString.encode("utf-8")) #send json string to blockchain server
+        
+        #print(f"{t}:{roomname} - {NAME}: {message}")
+        
+        BCS.close()
         
         return redirect(url_for("room", roomname = roomname))
         
     else:
-       return render_template("newpost.html")
+       return render_template("newpost.html", ROOMS = session["ROOMS"])
     
 @app.route("/logout/")
 def logout():
@@ -204,9 +254,10 @@ def logout():
     session.pop("USERID", None)
     session.pop("NAME", None)
     session.pop("EMAIL", None)
-    session.pop("ROOM", None)
+    session.pop("ROOMS", None)
     return redirect(url_for("login"))
 
 
-socketIO.run(app=app, host='0.0.0.0', port=8080, debug=True)
+#socketIO.run(app=app, host='0.0.0.0', port=8080, debug=True)
+app.run(host = '0.0.0.0', port = 8080, debug = True)
 
