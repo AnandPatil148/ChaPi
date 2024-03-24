@@ -7,14 +7,32 @@
 {% with messages = get_flashed_messages() %}
 {% if messages %}
     {% for msg in messages %}
-        <p> {{msg}} </p>
+        <div class="alert alert-success" role="alert">
+        {{msg}}
+        </div>
     {% endfor %}
 {% endif %}
 {% endwith %}
 
-<h1>WELCOME TO {{roomname}} ROOM</h1>
+<h1 id="h1">WELCOME TO {{roomname}} ROOM</h1>
 
-<!-- Gets recent posts from BCS server -->
+<!-- Gets recent posts from BCN server -->
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        
+        //Convert Serialized Dictionary in python to JS Dict object
+        //var data = JSON.parse('{"TimeStamp": "2024-03-14 20:58:43", "Roomname": "Lobby", "UserID": 5, "Name": "Test", "Message": "helo"}'); 
+        var data = {{ dataDict | tojson }}; //Prints data sent to html  page as a dict
+        displayPosts(data);
+        
+    
+    });
+</script>
+
+<div id="posts-display" class="">
+
+</div>
 
 <a href="/room/{{roomname}}/newpost/">New Post</a>
 
