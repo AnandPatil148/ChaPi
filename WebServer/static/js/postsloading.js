@@ -7,7 +7,7 @@ function displayPosts(data)
     var title = document.createElement("h5");
     //title.className=data[i].Name;
     title.setAttribute('class', 'title');
-    title.innerHTML="Title: "+data.Name;
+    title.innerHTML="By: "+data.Name;
     card.appendChild(title);
     
     //Post Message
