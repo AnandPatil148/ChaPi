@@ -33,7 +33,8 @@ BCN_ip = '180.ip.ply.gg'
 BCN_port = 12378
 
 # Setup the secret key for sessions
-app.config.from_pyfile('config.py')
+app.config.get["SECRET_KEY"] = secrets.token_urlsafe(16)
+
 app.permanent_session_lifetime = timedelta(days=5)
 
 #Hashes Password
