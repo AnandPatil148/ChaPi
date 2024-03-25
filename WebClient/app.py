@@ -210,6 +210,7 @@ def newpost(roomname):
     if request.method == "POST":
         
         message = request.form.get("POSTMSG", "")
+        
         #check if message if null or not 
         if message == "":
             flash("Message cannot be empty!","danger")
@@ -235,14 +236,14 @@ def newpost(roomname):
 
         print(dataString)
         
-        BCS = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP Conn to Blockchain servers
-        BCS.connect(('127.0.0.1', 6969))    # Connecting with local BCS Server (localhost:6969)
+        BCN = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP Conn to Blockchain servers
+        BCN.connect((BCN_ip, BCN_port))    # Connecting with local BCS Server (localhost:6969)
         
-        BCS.send(dataString.encode("utf-8")) #send json string to blockchain server
+        BCN.send(dataString.encode("utf-8")) #send json string to blockchain server
         
         #print(f"{t}:{roomname} - {NAME}: {message}")
         
-        BCS.close()
+        BCN.close()
         
         return redirect(url_for("room", roomname = roomname))
         
