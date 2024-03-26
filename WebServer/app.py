@@ -13,21 +13,6 @@ import json
 app = Flask(__name__)
 #socketIO = SocketIO(app)
 
-# Set up the database connection
-#host = 'localhost' 
-#port = 3306
-host = '19.ip.gl.ply.gg' 
-port = 6882
-username = 'server'
-password = 'server'
-loginDatabase = 'login'
-roomDatabase = 'roomdata'
-
-#Connect to mysql server 
-conn = mysql.connector.connect(host=host, port=port, user=username, passwd=password, )
-
-cursor = conn.cursor(buffered=True)
-
 #BCN params
 BCN_ip = '180.ip.ply.gg'
 BCN_port = 12378
@@ -36,23 +21,6 @@ BCN_port = 12378
 app.secret_key = "yomamagay"
 
 app.permanent_session_lifetime = timedelta(days=5)
-
-#Hashes Password
-def hash_password(passwordToHash, salt=None):
-    if salt is None:
-        salt = secrets.token_bytes(16)  # Generate a random 16-byte salt
-    
-    # Combine the password and salt, then hash
-    hashed_password = hashlib.sha256(passwordToHash.encode() + salt).hexdigest()
-    
-    return hashed_password, salt
-
-# Verifies password
-def check_password(passwordToCheck, storedHashOfPassword, storedSalt):
-    # Use the same process to hash the given password,
-    # and compare it with the stored password
-    generated_new_hash = hash_password(passwordToCheck, storedSalt)[0]
-    return generated_new_hash == storedHashOfPassword
 
 
 @app.route("/")
@@ -69,32 +37,48 @@ def signup():
     if request.method == "POST":
         
         NAME = request.form["NAME"]
-        EMAIL = request.form['EMAIL']
-        PASSWD = request.form['PASSWD']
-        CPASSWD = request.form['CPASSWD']
+        EMAIL = request.form["EMAIL"]
+        PASSWD = request.form["PASSWD"]
+        CPASSWD = request.form["CPASSWD"]
         
         # Checks that passwords match
         if PASSWD != CPASSWD:
             flash('Passwords do not match!')
             
-        elif NAME == "" or EMAIL == "" or PASSWD == '':
-            flash('Please Fill All Fields')
+        elif NAME == "" or EMAIL == "" or PASSWD == "":
+            flash('Please fill out all fields!')
                 
         else:
-            # Generates a unique salt and hashed pass for this PASSWD
-            hashed_PASSWD, saltOf_PASSWD = hash_password(PASSWD)
+            user_info = json.dumps({
+                'NAME' : NAME,
+                'EMAIL' : EMAIL,
+                'PASSWD' : PASSWD
+            })
             
             try:
                 
-                query = "INSERT INTO login.info (NAME,EMAIL,PASSWD,SALT)  VALUES(%s,%s,%s,%s)"
-                data = (NAME, EMAIL, hashed_PASSWD, saltOf_PASSWD)
-                cursor.execute(query,data)
-                conn.commit()
-                flash('Sign Up Successful! Please Log In Now')
-                return redirect(url_for('login'))
+                BCN = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP Conn to Blockchain Nodes
+                BCN.connect((BCN_ip, BCN_port))    # Connecting with local BCS Server (localhost:6969)
+
+                BCN_query = f"AUTH REGISTER !{user_info}" # Sending Login Info to the server for Authentication
+                BCN.send(BCN_query.encode()) # Sends the Query
+
+                dataString = BCN.recv(4096).decode() #  Receives Data from the Server and Decodes it into a String "AUTH 'response' !{data}"
+                
+                BCNAuthResponse = dataString.split(" ")[1] # Receives and Stores the Response from the BCN Node
+                
+                if BCNAuthResponse == "OK":
+                    flash('Sign Up Successful! Please Log In Now')
+                    return redirect(url_for('login'))
+                
+                elif BCNAuthResponse == "ERROR":
+                    errorInfo = json.loads(dataString.split("!")[1])
+                    raise Exception (errorInfo["ERROR"])
+                
             except Exception as e:
                 print(e)
-                flash('Username Already Taken! Try Again With A Different Username')
+                #flash('Username Already Taken! Try Again With A Different Username')
+                flash(str(e))
                 return render_template("signup.html")
     
     else: #If Method is GET       
@@ -111,23 +95,39 @@ def login():
         
         PASSWD = request.form.get("PASSWD", "")
         
+        login_info = json.dumps({
+            'NAME' : NAME,
+            'PASSWD' : PASSWD
+        })
+        
         try:
             
-            query = f"SELECT * FROM login.info WHERE NAME='{NAME}';"  
-            cursor.execute(query)
+            BCN = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP Conn to Blockchain Nodes
+            BCN.connect((BCN_ip, BCN_port))    # Connecting with local BCS Server (localhost:6969)
             
-            data = cursor.fetchone()
+            BCN_query = f"AUTH LOGIN !{login_info}" # Sending Login Info to the server for Authentication
+            BCN.send(BCN_query.encode()) # Sends the Query
             
-            if not data:
-                raise Exception ("Account Not Found. Please Signup")
+            dataString = BCN.recv(4096).decode() #  Receives Data from the Server and Decodes it into a String "AUTH 'response' !{data}"
             
-            if not check_password(PASSWD, data[3], data[4]):
-                raise Exception ("Incorrect username or password.")
-                            
-            session["USERID"] = data[0]
-            session["NAME"] = data[1]
-            session["EMAIL"] = data[2]       
-            session["ROOMS"] = data[5]       
+            BCNAuthResponse = dataString.split(" ")[1] # Receives and Stores the Response from the BCN Node
+            
+            if BCNAuthResponse == "OK":
+                #do smth
+                userInfo = json.loads(dataString.split("!")[1])   # User Information received from BCN is in JSON format to Python Dictionary
+                print(userInfo)
+                
+            elif BCNAuthResponse == "ERROR":
+                errorInfo = json.loads(dataString.split("!")[1])
+                raise Exception (errorInfo["ERROR"])
+            
+            else:
+                print("Unexpected response from BCN")
+            
+            session["USERID"] = userInfo["USERID"]   # Save USER ID in
+            session["NAME"] = userInfo["NAME"]       # Save USER NAME in Session
+            session["EMAIL"] = userInfo["EMAIL"]     # Save EMAIL ADDRESS in Session
+            session["ROOMS"] = userInfo["ROOMS"]     # Save ROOMS in Session
             flash('Logged In!')
                         
         except Exception as e:
@@ -155,12 +155,32 @@ def user():
         if request.method == "POST":
             EMAIL = request.form["EMAIL"]
             session["EMAIL"] = EMAIL
-            flash(f"Email Successfully Saved", "info") #Update email in db
             
-            query = "UPDATE login.info SET EMAIL=%s WHERE USERID=%s"
-            params = (EMAIL, USERID)
-            cursor.execute(query,params)
-            conn.commit()             
+            email_info = json.dumps({
+                "EMAIL": EMAIL,
+                "USERID": USERID
+            })
+            
+            try:
+                BCN = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP Conn to Blockchain Nodes
+                BCN.connect((BCN_ip, BCN_port))    # Connecting with local BCS Server (localhost:6969)
+
+                BCN_query = f"AUTH EMAIL_UPDATE !{email_info}" # Sending New Email Info to the server for Updating
+                BCN.send(BCN_query.encode()) # Sends the Query
+
+                dataString = BCN.recv(4096).decode() #  Receives Data from the Server and Decodes it into a String "AUTH 'response' !{data}"
+
+                BCNAuthResponse = dataString.split(" ")[1] # Receives and Stores the Response from the BCN Node
+
+                if BCNAuthResponse == "OK":
+                    flash(f"Email Successfully Saved", "info")
+                    
+                elif BCNAuthResponse == "ERROR":
+                    errorInfo = json.loads(dataString.split("!")[1])
+                    raise Exception (errorInfo["ERROR"])
+            
+            except Exception as e:   # If connection fails it will show an error message
+                flash(f"Connection Error - {e}", "error")
             
         else:
             if "EMAIL" in session:
@@ -235,7 +255,7 @@ def newpost(roomname):
 
         dataString = json.dumps(data) #convert to json string
 
-        print(dataString)
+        print(f"MINT "+dataString)
         
         BCN = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # TCP Conn to Blockchain servers
         BCN.connect((BCN_ip, BCN_port))    # Connecting with local BCS Server (localhost:6969)

@@ -20,21 +20,32 @@
     <a class="navbar-brand" href="/">Orbit</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDarkDropdown" aria-controls="navbarNavDarkDropdown" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
-    </button>
+      <span class="sr-only">Toggle navigation</span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <span class="icon-bar"></span>
+      <!--
+
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><button type="button" onclick="login()" class="btn btn-primary mx-2 my-1">Login</button></li>
+            <li class="nav-item"><a class="nav-link active" aria-current="page" href="/login">Login / Sign Up</a></li>
+            <li class="nav-item"><a class="nav-link active" aria-current="page" href="/login">Login / Sign Up</a></li>
+            <li class="nav-item"><a class="btn btn-primary mx-2" href="/login">Login / Sign Up</a></li>
+          </ul>
+        </div>
+      -->
+      </button>
 
     <div class="collapse navbar-collapse" id="navbarNavDarkDropdown">
       <ul class="navbar-nav mr-auto">
-
-        <li class="nav-item active">
-          <a class="nav-link" href="/">Home</a>
-        </li>
+        <li class="nav-item active"><a class="nav-link" href="/">Home</a></li>
 
         <!-- The following code displays a list of rooms the user can enter -->
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDarkDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
             Rooms
           </a>
-
           <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navbarDarkDropdownMenuLink">
             <div id="dropdownOptionsPlaceholder">
               <script>
@@ -47,22 +58,10 @@
             </div>
           </ul>
         </li>
-
-        <li class="nav-item">
-          <a class="nav-link" href="#">Features</a>
-        </li>
-
-        <li class="nav-item">
-          <a class="nav-link" href="#">Pricing</a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="/user/">Profile</a>
-          </li>
-
-        <li class="nav-item">
-          <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
-        </li>
+        <li class="nav-item"><a class="nav-link" href="#">Features</a></li>
+        <li class="nav-item"><a class="nav-link" href="#">Pricing</a></li>
+        <li class="nav-item"><a class="nav-link" href="/user/">Profile</a></li>
+        <li class="nav-item"><a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a></li>
       </ul>
     </div>
   </nav>
