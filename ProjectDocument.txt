@@ -12,6 +12,11 @@ Check which all rooms a user is present in to see the respective posts
 Show Posts dynammically 
 Add Comments to each post 
 BlockChain connectivity thru sockets
+Add a minted by tag at the end of every block
+Sort comments based on time stamp
+Make a list of all nodes
+Make a list of all servers. Update when new connection is made everytime
+Allow users to add their own server or node
 Realtime WebSockets Programming
 DONE - Make Registration Form with Name, Email and Password fields 
 DONE - Make Database connectivity
