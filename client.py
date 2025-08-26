@@ -11,18 +11,7 @@ SERVER = INPUT.split(':')[0]
 PORT = int(INPUT.split(':')[1])
 ADDR = (SERVER, PORT)
 
-regORlog = input("Register Or Login (r/l): ")
-
-if  regORlog == 'r':
-    NAME = input("Enter Username :")
-    EMAIL = input("Enter Email: ")
-    PASSWD = input("Enter Password: ")
-elif regORlog == 'l':
-    EMAIL = input("Enter Email: ")
-    PASSWD = input("Enter Password: ")
-else:
-    print("Invalid Option.")
-    exit()
+NAME = input("Enter Username :")
 
 
 try:
@@ -42,18 +31,9 @@ def client_receive():
             
             if not message:
                 raise socket.error("Lost Connection")
-            
-            elif message == "regORlog":
-                client.send(regORlog.encode(encodeFormat))
-            
+                       
             elif message == "NAME?":
                 client.send(NAME.encode(encodeFormat))
-                
-            elif message == "EMAIL?":
-                client.send(EMAIL.encode(encodeFormat))
-                
-            elif message == "PASSWD?":
-                client.send(PASSWD.encode(encodeFormat))
                 
             elif message == "AuthSuccessfull":
                 Authenticated[0] = True

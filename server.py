@@ -3,12 +3,6 @@
 import threading
 import socket
 import time
-import mysql.connector
-
-# Databaes Related Variables
-host = 'localhost'
-user = 'login'
-password = 'login'
 
 
 # Server Related Variables
@@ -110,84 +104,6 @@ def handle_client(CLIENT:socket.socket, NAME:str, roomname:str):
             CLIENT.close()
             break
     return
-
-# Performs Authentication of Clients
-
-def Authenticator(CLIENT:socket.socket, address):
-    conn = mysql.connector.connect(host = host,
-                               user = user,
-                               passwd = password,
-                               database = 'login')
-    
-    cursor = conn.cursor()
-    
-    try:
-        
-        CLIENT.send('regORlog'.encode(encodeFormat))
-        regORlog = CLIENT.recv(1024).decode(encodeFormat)
-        
-        # Checks whether client is trying to register or login
-        if regORlog == 'r':
-            CLIENT.send('NAME?'.encode(encodeFormat))
-            NAME = CLIENT.recv(1024).decode(encodeFormat)
-            
-            CLIENT.send('EMAIL?'.encode(encodeFormat))
-            EMAIL = CLIENT.recv(1024).decode(encodeFormat)
-            
-            CLIENT.send('PASSWD?'.encode(encodeFormat))
-            PASSWD = CLIENT.recv(1024).decode(encodeFormat)
-            
-            query = f"INSERT INTO info (NAME,EMAIL,PASSWD) VALUES ('{NAME}', '{EMAIL}', '{PASSWD}');"
-            cursor.execute(query)
-            conn.commit()
-            
-        elif regORlog == 'l':
-            # Get Clients Email      
-            CLIENT.send('EMAIL?'.encode(encodeFormat))
-            EMAIL = CLIENT.recv(1024).decode(encodeFormat)
-            
-            # Get Clients Password
-            CLIENT.send('PASSWD?'.encode(encodeFormat))
-            PASSWD = CLIENT.recv(1024).decode(encodeFormat)
-        
-        query = f"SELECT PASSWD FROM info WHERE EMAIL = '{EMAIL}';"
-        cursor.execute(query)
-        
-        resultPASSWD = cursor.fetchall()
-        
-        if resultPASSWD == []:
-            CLIENT.send("Authentication Failed. Account Not Found. Please Create One".encode(encodeFormat))
-            print(f'[DISCONNECTED] Connection with {str(address)} Closed Due to Failed Authentication')
-            CLIENT.close()
-        
-        elif PASSWD == resultPASSWD[0][0]:
-            
-            query = f"SELECT NAME FROM info WHERE EMAIL = '{EMAIL}'"
-            cursor.execute(query)
-            NAME = cursor.fetchall()[0][0]
-            
-            CLIENTS.append(CLIENT)
-            NAMES.append(NAME)
-            ROOMS['Lobby'].append(CLIENT)
-            
-            CLIENT.send('AuthSuccessfull'.encode(encodeFormat))
-            print(f"[USER] User with Address {str(address)} and Name '{NAME}' joined Lobby")
-                    
-            time.sleep(1)
-                
-            broadcast(f'\n{NAME} has connected to the Lobby. Welcome them!! :)\n', 'Lobby')
-            
-            thread = threading.Thread(target=handle_client, args=(CLIENT, NAME, 'Lobby'), daemon=True)
-            thread.start()
-                        
-        else:
-            
-            CLIENT.send("Authentication Failed. Retry with Correct Email and Password".encode(encodeFormat))
-            print(f"[DISCONNECTED] Connection with {str(address)} Closed Due to Failed Authenticatio")
-            CLIENT.close()
-                       
-    except socket.error as msg:
-        print(f"[DISCONNECTED] {str(address)} DISCONNECTED ABRUPTLY WITH ERROR : {msg}")
         
 
 # Main function to receive the CLIENTS connection
@@ -197,7 +113,21 @@ def receive():
         CLIENT, address = server.accept()
         print(f'[CONNECTED] Connection is established with {str(address)}')
         
-        authThread = threading.Thread(target=Authenticator, args=(CLIENT,address), daemon=True)
+        CLIENT.send('NAME?'.encode(encodeFormat))
+        NAME = CLIENT.recv(1024).decode(encodeFormat)
+        
+        CLIENTS.append(CLIENT)
+        NAMES.append(NAME)
+        ROOMS['Lobby'].append(CLIENT)
+            
+        CLIENT.send('AuthSuccessfull'.encode(encodeFormat))
+        print(f"[USER] User with Address {str(address)} and Name '{NAME}' joined Lobby")
+                    
+        time.sleep(1)
+                
+        broadcast(f'\n{NAME} has connected to the Lobby. Welcome them!! :)\n', 'Lobby')
+        
+        authThread = threading.Thread(target=handle_client, args=(CLIENT,NAME, "Lobby"), daemon=True)
         authThread.start()  
 
 receiveThread = threading.Thread(target=receive, daemon=True)
